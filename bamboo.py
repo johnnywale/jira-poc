@@ -1,10 +1,33 @@
-from atlassian import Bamboo
+from atlassian import Bamboo, Jira
+
+
+class JiraApi(Jira):
+    def trigger_deployment(self, environment_id, version_id):
+        res = self.post('rest/api/latest/queue/deployment',
+                        json='{}',
+                        params={'environmentId': environment_id, "versionId": version_id})
+        return res
 
 
 class BambooBuildApi(Bamboo):
     """
 
     """
+
+    def update_variable(self, plan_key, key, value):
+        res = self.put('rest/api/latest/plan/' + plan_key + '/variables/' + key,
+                       data={'name': key, "value": value})
+        return res
+
+    def create_variable(self, plan_key, key, value):
+        res = self.post('rest/api/latest/plan/' + plan_key + '/variables',
+                        json='{}',
+                        params={'name': key, "value": value})
+        return res
+
+    def get_variable(self, plan_key, key):
+        res = self.get('rest/api/latest/plan/' + plan_key + '/variables/' + key)
+        return res
 
     def trigger_deployment(self, environment_id, version_id):
         res = self.post('rest/api/latest/queue/deployment',

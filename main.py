@@ -15,16 +15,16 @@ class DeployTask(object):
         return str(self.__class__) + ": " + str(self.__dict__)
 
 
-field_deployment_env = 'Deploy environment'
+field_deployment_env = 'Deploy Environment'
 field_build_task = 'Build Plan'
-field_build_number = 'Build number'
+field_software_version = 'Software Version'
 deployment_branch = 'master'
-jira = Jira('http://localhost:8080', token="NDA5MjgyNTI1NDQ5Op40xz7Gb86ceD4PlQqsimXo5V3r")
-bamboo = BambooBuildApi(url='http://localhost:8085', token='MjMzOTg1MDk4MjM3OrANuM/c6f157lnAqQHaOEBjt6ju')
+jira = Jira('http://192.168.1.127:8080', token="NDIyODAxNzYzMDAwOvR9mI5jRgEhy9LPsv/FLjzvC/xV")
+bamboo = BambooBuildApi(url='http://192.168.1.127:8085', token='MjMzOTg1MDk4MjM3OrANuM/c6f157lnAqQHaOEBjt6ju')
 
 fields = jira.get_all_fields();
 deploy_env = None
-build_number = None
+software_version = None
 build_task = None
 
 for field in fields:
@@ -32,8 +32,8 @@ for field in fields:
         deploy_env = field['id']
     elif field['name'] == field_build_task:
         build_plan_key = field['id']
-    elif field['name'] == field_build_number:
-        build_number = field['id']
+    elif field['name'] == field_software_version:
+        software_version = field['id']
 
 issues = jira.jql('status="APPROVED" AND issuetype= deploy')
 status = jira.get_all_statuses()
@@ -48,11 +48,15 @@ for issue in issues['issues']:
     if len(task.envs) == 0:
         print("no env defined ,skip")
         continue
-    task.build_number = int(issue["fields"][build_number]);
     task.plan = issue["fields"][build_plan_key]['value'];
+
+    sv = issue["fields"][software_version];
+    var = bamboo.get_variable(task.plan, sv)['value'];
+    task.build_number = int(var)
     print(task)
 
     project = bamboo.get_deploy_project(task.plan);
+
     project_id = project['id']
     env_dic = dict(map(lambda x: (x['name'], x), project['environments']))
 
